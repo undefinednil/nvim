@@ -22,7 +22,21 @@ vim.cmd.colorscheme("jetmind")
 require("mini.icons").setup({})
 MiniIcons.mock_nvim_web_devicons()
 
-require("fzf-lua").setup({ defaults = { file_icons = "mini" } })
+require("fzf-lua").setup({
+  defaults = { file_icons = "mini" },
+  grep = {
+    -- fzf-lua runs ripgrep with --color=always, so the result list shows
+    -- ripgrep's own colors (magenta paths, bold red matches). Override them
+    -- with JetMind colors: soft white paths, gray line numbers, themed blue
+    -- matches.
+    rg_opts = "--column --line-number --no-heading --color=always --smart-case "
+      .. "--colors=path:fg:252 "
+      .. "--colors=line:fg:245 "
+      .. "--colors=column:fg:245 "
+      .. "--colors=match:fg:39 "
+      .. "--colors=match:style:nobold",
+  },
+})
 require("gitsigns").setup({})
 require("codediff").setup({
   explorer = { view_mode = "tree" },
@@ -62,6 +76,7 @@ require("which-key").add({
   { "<leader>f", group = "find" },
   { "<leader>g", group = "generate" },
   { "<leader>h", group = "git hunks" },
+  { "<leader>l", group = "launch" },
   { "<leader>s", group = "search" },
 })
 

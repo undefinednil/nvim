@@ -23,25 +23,18 @@ vim.api.nvim_create_autocmd("VimEnter", {
   end,
 })
 
--- Hover popup (K) with padding around the content.
-vim.lsp.handlers["textDocument/hover"] = function(_, result, ctx, config)
-  if not (result and result.contents) then
-    return
+-- Hover popup (K) with padding around the content. `vim.lsp.buf.hover()` no
+-- longer goes through `vim.lsp.handlers`; it opens the float itself with
+-- `open_floating_preview` and tags the config with focus_id, so pad there.
+local open_floating_preview = vim.lsp.util.open_floating_preview
+vim.lsp.util.open_floating_preview = function(contents, syntax, opts, ...)
+  if opts and opts.focus_id == "textDocument/hover" and type(contents) == "table" then
+    local padded = { " " }
+    for _, line in ipairs(contents) do
+      padded[#padded + 1] = "  " .. line .. "  "
+    end
+    padded[#padded + 1] = " "
+    contents = padded
   end
-  local lines = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
-  while #lines > 0 and (lines[1] == "" or lines[1] == vim.NIL) do
-    table.remove(lines, 1)
-  end
-  while #lines > 0 and (lines[#lines] == "" or lines[#lines] == vim.NIL) do
-    table.remove(lines)
-  end
-  if vim.tbl_isempty(lines) then
-    return
-  end
-  for i, line in ipairs(lines) do
-    lines[i] = "  " .. line
-  end
-  table.insert(lines, 1, " ")
-  lines[#lines + 1] = " "
-  return vim.lsp.util.open_floating_preview(lines, "markdown", config)
+  return open_floating_preview(contents, syntax, opts, ...)
 end

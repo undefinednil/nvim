@@ -1,6 +1,8 @@
 require("easymotion").setup()
 require("sidebar").setup()
 require("mru").setup()
+require("refs").setup()
+require("lazygit").setup()
 
 vim.keymap.set("n", "<C-e>", function() require("fzf-lua").files() end, { desc = "Find files" })
 vim.keymap.set("n", "<C-S-f>", function() require("fzf-lua").live_grep() end, { desc = "Live grep" })
@@ -16,12 +18,31 @@ end, { desc = "Format" })
 
 vim.keymap.set("n", "-", function() require("oil").open() end, { desc = "Open parent directory" })
 vim.keymap.set("n", "<C-b>", function() require("sidebar").toggle() end, { desc = "Toggle file tree sidebar" })
-vim.keymap.set("n", "<C-h>", function() require("sidebar").focus() end, { desc = "Focus file tree sidebar" })
-vim.keymap.set("n", "<C-l>", function() require("sidebar").focus_main() end, { desc = "Focus main window" })
+-- Window switching on <C-h>/<C-l>. Falls back to the sidebar shortcuts when
+-- there is no window in that direction: <C-h> opens/focuses the sidebar,
+-- <C-l> returns to the main window. For stacked windows use the builtin
+-- <C-w>j / <C-w>k.
+local function win_switch(dir)
+  local cur = vim.api.nvim_get_current_win()
+  vim.cmd("wincmd " .. dir)
+  if vim.api.nvim_get_current_win() ~= cur then
+    return
+  end
+  if dir == "h" then
+    require("sidebar").focus()
+  elseif dir == "l" then
+    require("sidebar").focus_main()
+  end
+end
+for _, dir in ipairs({ "h", "l" }) do
+  vim.keymap.set("n", "<C-" .. dir .. ">", function()
+    win_switch(dir)
+  end, { desc = dir == "h" and "Focus left window or sidebar" or "Focus right window or main" })
+end
 
 vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition" })
-vim.keymap.set("n", "<leader>qf", vim.lsp.buf.code_action, { desc = "Code action" })
-vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename symbol" })
+vim.keymap.set("n", "gi", vim.lsp.buf.implementation, { desc = "Go to implementation" })
+vim.keymap.set("n", "gy", vim.lsp.buf.type_definition, { desc = "Go to type definition" })
 vim.keymap.set("n", "<leader>oi", function()
   vim.lsp.buf.code_action({ context = { only = { "source.organizeImports" }, diagnostics = {} }, apply = true })
 end, { desc = "Organize imports" })
